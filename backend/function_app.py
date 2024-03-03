@@ -18,30 +18,26 @@ app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
                       container_name="counter",
                       connection="MyAccount_COSMOSDB")
 
-# HTTP Request
+
 def GetCountValue(req: func.HttpRequest, inputDocument: func.DocumentList,
-         outputDocument: func.Out[func.Document]) -> func.HttpResponse:
+                  outputDocument: func.Out[func.Document]) -> func.HttpResponse:
     logging.info('Python HTTP trigger function processed a request.')
 
-    counter = getNewCounterValue(inputDocument[0]['count'])
-    inputDocument[0]['count'] = counter
-    outputDocument.set(func.Document.from_json(inputDocument[0].to_json()))
+    # Simplify the counter increment and document update process
+    try:
+        # Assume inputDocument always has at least one document and 'count' is an int
+        document = inputDocument[0]  # Directly use the first document
+        document['count'] += 1  # Increment count directly
 
-    if counter:
-        return func.HttpResponse(
-            body=json.dumps({
-                "id": 1,
-                "count": counter
-            }),
-            status_code=200,
-            mimetype="application/json"
-        )
-    else:
-        return func.HttpResponse(
-            "Error",
-            status_code=500
-        )
+        # Update the output document
+        outputDocument.set(document)
 
-def getNewCounterValue(value: int):
-    return value + 1
+        # Simplify the response creation process
+        response_body = json.dumps({"id": document['id'], "count": document['count']})
+        return func.HttpResponse(body=response_body, status_code=200, mimetype="application/json")
+    except Exception as e:
+        logging.error(f"Error processing request: {e}")
+        return func.HttpResponse("Error", status_code=500)
+
+
 
